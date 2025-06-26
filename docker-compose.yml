@@ -1,0 +1,7 @@
+services:
+  order_service:
+    context: .
+    dockerfile: Dockerfile
+    ports: "8008:8008"
+    volumes:
+      - ./:/app
