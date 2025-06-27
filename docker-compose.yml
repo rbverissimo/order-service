@@ -1,7 +1,27 @@
 services:
   order_service:
-    context: .
-    dockerfile: Dockerfile
-    ports: "8008:8008"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+      - "8008:8008"
     volumes:
       - ./:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://orderuser:orderpassword@order_db:5435/order_db
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      - order_db
+  order_db:
+    image: postgres:16
+    container_name: order_db
+    ports:
+      - "5435:5432"
+    environment:
+      - POSTGRES_USER=orderuser
+      - POSTGRES_PASSWORD=orderpassword
+      - POSTGRES_DB=order_db
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+volumes:
+  order_db_data:
