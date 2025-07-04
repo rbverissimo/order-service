@@ -1,18 +1,20 @@
 import uvicorn
 from fastapi import FastAPI, Depends, status
-from contextlib import asynccontextmanager
-
-async def lifespan(app: FastAPI):
-    print('Order Service is running!')
-    yield
-    print('Order Service has been shutdown!')
 
 app = FastAPI(
     title='Order Service',
     description='Service to manage customer orders',
-    version='1.0.0',
-    lifespan=lifespan
+    version='1.0.0'
 )
+
+@app.on_event('startup')
+async def startup_event():
+    print('Order Service starting!')
+
+@app.on_event('shutdown')
+async def shutdown_event():
+    print('Order Service shutting down!')
+
 
 @app.get('/health', status_code=status.HTTP_200_OK)
 async def health_check():
