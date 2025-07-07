@@ -1,6 +1,7 @@
 import uvicorn
 from fastapi import FastAPI, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from . import schemas, models, database, kafka_producer
 
 app = FastAPI(
@@ -60,7 +61,19 @@ async def create_order(order: schemas.OrderCreate, db: AsyncSession = Depends(da
             detail=f'Failed to create order: {e}'
         )
 
+@app.get('/orders/{order_id}', response_model=schemas.Order)
+async def get_order(order_id: int, db: AsyncSession = Depends(database.get_db)):
+    result = await db.execute(select(models.Order).where(models.Order.id == order_id))
+    order = result.scalars().first()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Order not found'
+        )
     
+    await db.refresh()
+    return order
 
 
 
