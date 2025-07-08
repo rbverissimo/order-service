@@ -13,6 +13,9 @@ app = FastAPI(
 @app.on_event('startup')
 async def startup_event():
     print('Order Service starting!')
+    await database.init_db()
+    await kafka_producer.kafka_producer_startup()
+    print('Startup completed!')
 
 @app.on_event('shutdown')
 async def shutdown_event():
