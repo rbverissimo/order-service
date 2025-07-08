@@ -32,6 +32,7 @@ async def send_order_created_message(order_data: dict):
     try:
         message_value = json.dumps(order_data).encode('utf-8')
         await producer.send_and_wait(TOPIC_ORDER_CREATED, message_value)
+        logger.info(f'Message published in {TOPIC_ORDER_CREATED} as {order_data}')
     except Exception as e:
         logger.error(f'Failed to send OrderCreated event for Order ID {order_data.get('id')}: {e} ')
 

@@ -2,6 +2,7 @@ import uvicorn
 from fastapi import FastAPI, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 from . import schemas, models, database, kafka_producer
 
 app = FastAPI(
@@ -49,15 +50,17 @@ async def create_order(order: schemas.OrderCreate, db: AsyncSession = Depends(da
             db.add(db_item)
         
         await db.commit()
-        await db.refresh(db_order)
+        
+        stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id==db_order.id) 
+        result = await db.execute(stmt)
 
-        order_response = schemas.Order.model_validate(db_order)
+        order_response = schemas.Order.model_validate(result.scalars().first())
 
         await kafka_producer.send_order_created_message(order_response.model_dump())
 
         return order_response
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         print(f'Error creating order: {e}')
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
