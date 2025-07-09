@@ -1,9 +1,11 @@
 import uvicorn
+import datetime
 from fastapi import FastAPI, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from . import schemas, models, database, kafka_producer
+
 
 app = FastAPI(
     title='Order Service',
@@ -56,7 +58,23 @@ async def create_order(order: schemas.OrderCreate, db: AsyncSession = Depends(da
 
         order_response = schemas.Order.model_validate(result.scalars().first())
 
-        await kafka_producer.send_order_created_message(order_response.model_dump())
+        event_payload = {
+            "orderId": str(db_order.id),
+            "userId": db_order.user_id,
+            "total_amout": float(db_order.total_amount),
+            "status": db_order.status,
+            "items": [
+                {
+                    "productId": item.product_id,
+                    "quantity": item.quantity,
+                    "price": float(item.price)
+
+                } for item in db_order.items
+            ], 
+            "createdAt": db_order.created_at.isoformat()
+        }
+
+        await kafka_producer.send_order_created_message(event_payload)
 
         return order_response
     except Exception as e:
