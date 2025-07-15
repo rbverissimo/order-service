@@ -33,4 +33,11 @@ class OrderRepository:
         stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id==db_order.id) 
         result = await self.db.execute(stmt)
         return result.scalars().first()
+    
+    async def get_order_by_id(self, order_id: int) -> models.Order | None:
+        stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id == order_id)
+        result = await self.db.execute(stmt)
+        return result.scalars().first()
+
+
 
