@@ -38,6 +38,14 @@ class OrderRepository:
         stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id == order_id)
         result = await self.db.execute(stmt)
         return result.scalars().first()
+    
+    async def get_paginated_orders(
+            self,
+            page: int,
+            page_size: int,
+            filters: schemas.OrderFilter
+    ):
+        pass
 
 
 

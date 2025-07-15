@@ -1,7 +1,7 @@
 
 from pydantic import BaseModel
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 class OrderItemBase(BaseModel):
     product_id: str
@@ -32,3 +32,9 @@ class Order(OrderBase):
     items: List[OrderItem] = []
     class Config:
         from_attributes = True
+
+class OrderFilter(BaseModel):
+    min_amount: Optional[float]
+    max_amount: Optional[float]
+    status: Optional[str]
+    product_id: Optional[str]
