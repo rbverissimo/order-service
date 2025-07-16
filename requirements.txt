@@ -4,3 +4,4 @@ sqlalchemy==2.0.41
 asyncpg
 aiokafka
 pydantic-settings
+pydantic=2.11.7
