@@ -1,8 +1,7 @@
 import uvicorn
-import datetime
 from fastapi import FastAPI, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from . import schemas, models, database, kafka_producer
 
