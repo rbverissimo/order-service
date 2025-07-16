@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, distinct
 from .. import schemas, models
@@ -45,7 +45,7 @@ class OrderRepository:
             page_size: int,
             filters: schemas.OrderFilter
     ):
-        query = select(models.Order)
+        query = select(models.Order).options(selectinload(models.Order.items))
         conditions = []
 
         if filters.product_id:
@@ -60,6 +60,13 @@ class OrderRepository:
         
         if conditions:
             query = query.where(and_(*conditions))
+
+        if filters.product_id:
+            count_query = select(func.count(distinct(models.Order.id))).select_from(query.subquery())
+        else:
+            count_query = select(func.count()).select_from(query.subquery())
+
+        total_count = (await self.db.execute(count_query)).scalar_one()
         
         offset = (page - 1) * page_size
         paginated_query = query.offset(offset).limit(page_size)
@@ -67,7 +74,15 @@ class OrderRepository:
         result = await self.db.execute(paginated_query)
         orders = result.scalars().unique().all()
 
-        
+        total_pages = (total_count + page_size - 1) // page_size
+
+        return {
+            "data": [schemas.Order.from_attributes(order) for order in orders],
+            "total_pages" : total_pages,
+            "total_count" : total_count,
+            "page": page,
+            "page_size": page_size 
+        }
         
 
           
