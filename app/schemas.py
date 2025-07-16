@@ -2,11 +2,12 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import List, Optional
+from decimal import Decimal
 
 class OrderItemBase(BaseModel):
     product_id: str
     quantity: int
-    price: float
+    price: Decimal
 
 class OrderItemCreateBase(OrderItemBase):
     pass
@@ -19,7 +20,7 @@ class OrderItem(OrderItemBase):
 
 class OrderBase(BaseModel):
     user_id: str
-    total_amount: float
+    total_amount: Decimal
     items: List[OrderItemCreateBase]
 
 class OrderCreate(OrderBase):
@@ -34,7 +35,7 @@ class Order(OrderBase):
         from_attributes = True
 
 class OrderFilter(BaseModel):
-    min_amount: Optional[float]
-    max_amount: Optional[float]
+    min_amount: Optional[Decimal]
+    max_amount: Optional[Decimal]
     status: Optional[str]
     product_id: Optional[List[str]] = Field(None, description='List of products IDs to filter Order considering items that references those IDs')
