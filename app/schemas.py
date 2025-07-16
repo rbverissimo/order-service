@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import List, Optional
 
@@ -37,4 +37,4 @@ class OrderFilter(BaseModel):
     min_amount: Optional[float]
     max_amount: Optional[float]
     status: Optional[str]
-    product_id: Optional[str]
+    product_id: Optional[List[str]] = Field(None, description='List of products IDs to filter Order considering items that references those IDs')
