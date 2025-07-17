@@ -1,9 +1,12 @@
 import uvicorn
-from fastapi import FastAPI, Depends, status, HTTPException
+from fastapi import FastAPI, Depends, status, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from . import schemas, models, database, kafka_producer
+from .repositories.order_repository import OrderRepository
+from decimal import Decimal
+from typing import Optional, List
 
 
 app = FastAPI(
@@ -22,6 +25,11 @@ async def startup_event():
 @app.on_event('shutdown')
 async def shutdown_event():
     print('Order Service shutting down!')
+
+
+
+def get_order_repo(db: AsyncSession = Depends(database.get_db)) -> OrderRepository:
+    return OrderRepository(db)
 
 
 @app.get('/health', status_code=status.HTTP_200_OK)
@@ -98,6 +106,26 @@ async def get_order(order_id: int, db: AsyncSession = Depends(database.get_db)):
     await db.refresh()
     return order
 
+
+@app.get('/orders', response_model=schemas.OrdersPaginated)
+async def index_orders(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    repo: OrderRepository = Depends(get_order_repo),
+    product_id: Optional[List[str]] = Query(None, description='Filter by product_id eg product_id=xyz&product_id=abc'),
+    min_amount: Optional[Decimal] = Query(None),
+    max_amount: Optional[Decimal] = Query(None),
+    status: Optional[str] = Query(None)
+):
+    filters = schemas.OrderFilter(
+        product_id=product_id,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        status=status
+    )
+
+    paginated_result = await repo.get_paginated_orders(page=page, page_size=page_size, filters=filters)
+    return paginated_result
 
 
 if __name__ == '__main__':
