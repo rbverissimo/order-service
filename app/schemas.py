@@ -39,3 +39,10 @@ class OrderFilter(BaseModel):
     max_amount: Optional[Decimal]
     status: Optional[str]
     product_id: Optional[List[str]] = Field(None, description='List of products IDs to filter Order considering items that references those IDs')
+
+class OrdersPaginated(BaseModel):
+    total_count: int
+    page: int
+    page_size: int
+    total_pages: int
+    data: List[Order]
