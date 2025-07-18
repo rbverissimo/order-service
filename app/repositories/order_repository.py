@@ -72,12 +72,16 @@ class OrderRepository:
         paginated_query = query.offset(offset).limit(page_size)
 
         result = await self.db.execute(paginated_query)
-        orders = result.scalars().unique().all()
+
+        orders_orm = []
+        for order_obj in result.scalars().unique():
+            _ = order_obj.items
+            orders_orm.append(order_obj)
 
         total_pages = (total_count + page_size - 1) // page_size
 
         return {
-            "data": [schemas.Order.from_attributes(order) for order in orders],
+            "data": [schemas.Order.from_attributes(order) for order in orders_orm],
             "total_pages" : total_pages,
             "total_count" : total_count,
             "page": page,
