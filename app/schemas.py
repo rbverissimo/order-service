@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import List, Optional
 from decimal import Decimal
@@ -15,8 +15,7 @@ class OrderItemCreateBase(OrderItemBase):
 class OrderItem(OrderItemBase):
     id: int
     order_id: int
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrderBase(BaseModel):
     user_id: str
@@ -31,8 +30,7 @@ class Order(OrderBase):
     status: str = 'pending'
     created_at: datetime
     items: List[OrderItem] = []
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrderFilter(BaseModel):
     min_amount: Optional[Decimal]

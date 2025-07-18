@@ -81,7 +81,7 @@ class OrderRepository:
         total_pages = (total_count + page_size - 1) // page_size
 
         return {
-            "data": [schemas.Order.from_attributes(order) for order in orders_orm],
+            "data": [schemas.Order(id=order.id, user_id=order.user_id, total_amount=order.total_amount, items=order.items, status=order.status, created_at=order.created_at) for order in orders_orm],
             "total_pages" : total_pages,
             "total_count" : total_count,
             "page": page,
