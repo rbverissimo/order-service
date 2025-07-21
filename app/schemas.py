@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 from datetime import datetime
 from typing import List, Optional
 from decimal import Decimal
@@ -37,6 +37,14 @@ class OrderFilter(BaseModel):
     max_amount: Optional[Decimal]
     status: Optional[str]
     product_id: Optional[List[str]] = Field(None, description='List of products IDs to filter Order considering items that references those IDs')
+
+    @model_validator(mode='after')
+    def validate_min_max_amount(self) -> 'OrderFilter':
+        if self.min_amount is not None and self.max_amount is not None:
+            if self.min_amount > self.max_amount:
+                raise ValueError('min_amount should be lower than max_amount parameter')
+        return self
+    
 
 class OrdersPaginated(BaseModel):
     total_count: int
