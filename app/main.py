@@ -1,12 +1,14 @@
 import uvicorn
-from fastapi import FastAPI, Depends, status, HTTPException, Query
+from fastapi import FastAPI, Depends, status as httpStatus, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from . import schemas, models, database, kafka_producer
 from .repositories.order_repository import OrderRepository
+from .utilities import type_conversion
 from decimal import Decimal
 from typing import Optional, List
+from pydantic import ValidationError
 
 
 app = FastAPI(
@@ -32,11 +34,11 @@ def get_order_repo(db: AsyncSession = Depends(database.get_db)) -> OrderReposito
     return OrderRepository(db)
 
 
-@app.get('/health', status_code=status.HTTP_200_OK)
+@app.get('/health', status_code=httpStatus.HTTP_200_OK)
 async def health_check():
     return {'status': 'Order Service is healthy'}
 
-@app.post('/orders/', response_model=schemas.Order, status_code=status.HTTP_201_CREATED)
+@app.post('/orders/', response_model=schemas.Order, status_code=httpStatus.HTTP_201_CREATED)
 async def create_order(order: schemas.OrderCreate, db: AsyncSession = Depends(database.get_db)):
     try:
 
@@ -88,7 +90,7 @@ async def create_order(order: schemas.OrderCreate, db: AsyncSession = Depends(da
         await db.rollback()
         print(f'Error creating order: {e}')
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=httpStatus.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f'Failed to create order: {e}'
         )
 
@@ -99,7 +101,7 @@ async def get_order(order_id: int, db: AsyncSession = Depends(database.get_db)):
 
     if not order:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=httpStatus.HTTP_404_NOT_FOUND,
             detail='Order not found'
         )
     
@@ -117,13 +119,18 @@ async def index_orders(
     max_amount: Optional[Decimal] = Query(None),
     status: Optional[str] = Query(None)
 ):
-    filters = schemas.OrderFilter(
-        product_id=product_id,
-        min_amount=min_amount,
-        max_amount=max_amount,
-        status=status
-    )
-
+    try:
+        filters = schemas.OrderFilter(
+            product_id=product_id,
+            min_amount=min_amount,
+            max_amount=max_amount,
+            status=status
+        )
+    except ValidationError as e:
+        processed_errors = type_conversion.convert_decimal_into_float(e.errors())
+        raise HTTPException(
+            status_code= httpStatus.HTTP_422_UNPROCESSABLE_ENTITY
+        )
     paginated_result = await repo.get_paginated_orders(page=page, page_size=page_size, filters=filters)
     return paginated_result
 
