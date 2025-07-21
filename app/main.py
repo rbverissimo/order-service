@@ -127,9 +127,10 @@ async def index_orders(
             status=status
         )
     except ValidationError as e:
-        processed_errors = type_conversion.convert_decimal_into_float(e.errors())
+        processed_errors = type_conversion.convert_decimal_into_serializable_str(e.errors())
         raise HTTPException(
-            status_code= httpStatus.HTTP_422_UNPROCESSABLE_ENTITY
+            status_code= httpStatus.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=processed_errors
         )
     paginated_result = await repo.get_paginated_orders(page=page, page_size=page_size, filters=filters)
     return paginated_result
