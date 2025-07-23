@@ -9,30 +9,34 @@ class OrderRepository:
         self.db = db
     
     async def create(self, order_create: schemas.OrderCreate) -> models.Order | None:
-        db_order = models.Order(
-            user_id=order_create.user_id,
-            total_amount=order_create.total_amount,
-            status='pending',
-            created_at=datetime.datetime.now(datetime.timezone.utc)
-        )
-
-        self.db.add(db_order)
-        await self.db.flush()
-
-        for item_data in order_create.items:
-            db_item = models.OrderItem(
-                order_id=db_order.id,
-                product_id=item_data.product_id,
-                quantity=item_data.quantity,
-                price=item_data.price
+        try:
+            db_order = models.Order(
+                user_id=order_create.user_id,
+                total_amount=order_create.total_amount,
+                status='pending',
+                created_at=datetime.datetime.now(datetime.timezone.utc)
             )
-            self.db.add(db_item)
 
-        await self.db.commit()
+            self.db.add(db_order)
+            await self.db.flush()
 
-        stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id==db_order.id) 
-        result = await self.db.execute(stmt)
-        return result.scalars().first()
+            for item_data in order_create.items:
+                db_item = models.OrderItem(
+                    order_id=db_order.id,
+                    product_id=item_data.product_id,
+                    quantity=item_data.quantity,
+                    price=item_data.price
+                )
+                self.db.add(db_item)
+
+            await self.db.commit()
+
+            stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id==db_order.id) 
+            result = await self.db.execute(stmt)
+            return result.scalars().first()
+        except Exception as e:
+            await self.db.rollback()
+            raise e
     
     async def get_order_by_id(self, order_id: int) -> models.Order | None:
         stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id == order_id)
