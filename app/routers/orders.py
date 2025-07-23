@@ -2,7 +2,6 @@ from fastapi import APIRouter, status as httpStatus, Depends, HTTPException, Que
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
 from typing import Optional, List
 from decimal import Decimal
 from ..repositories.order_repository import OrderRepository
