@@ -15,33 +15,18 @@ def get_order_repo(db: AsyncSession = Depends(database.get_db)) -> OrderReposito
     return OrderRepository(db)
 
 @router.post('', response_model=schemas.Order, status_code=httpStatus.HTTP_201_CREATED)
-async def create_order(order: schemas.OrderCreate, db: AsyncSession = Depends(database.get_db)):
+async def create_order(order: schemas.OrderCreate, db: AsyncSession = Depends(database.get_db), repo: OrderRepository = Depends(get_order_repo)):
     try:
 
-        db_order = models.Order(
-            user_id=order.user_id,
-            total_amount=order.total_amount,
-            status='pending'
-        )
+        db_order = await repo.create(order)
 
-        db.add(db_order)
-        await db.flush()
-
-        for item_data in order.items:
-            db_item = models.OrderItem(
-                order_id=db_order.id,
-                product_id=item_data.product_id,
-                quantity=item_data.quantity,
-                price=item_data.price
+        if not db_order:
+            raise HTTPException(
+                status_code=httpStatus.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail='Failed to create order due to an unknown server state'
             )
-            db.add(db_item)
-        
-        await db.commit()
-        
-        stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id==db_order.id) 
-        result = await db.execute(stmt)
 
-        order_response = schemas.Order.model_validate(result.scalars().first())
+        order_response = schemas.Order.model_validate(db_order)
 
         event_payload = {
             "orderId": str(db_order.id),
