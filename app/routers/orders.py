@@ -30,7 +30,7 @@ async def create_order(order: schemas.OrderCreate, repo: OrderRepository = Depen
         event_payload = {
             "orderId": str(db_order.id),
             "userId": db_order.user_id,
-            "total_amout": float(db_order.total_amount),
+            "total_amount": float(db_order.total_amount),
             "status": db_order.status,
             "items": [
                 {
