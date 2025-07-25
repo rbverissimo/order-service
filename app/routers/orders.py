@@ -14,7 +14,7 @@ def get_order_repo(db: AsyncSession = Depends(database.get_db)) -> OrderReposito
     return OrderRepository(db)
 
 @router.post('', response_model=schemas.Order, status_code=httpStatus.HTTP_201_CREATED)
-async def create_order(order: schemas.OrderCreate, db: AsyncSession = Depends(database.get_db), repo: OrderRepository = Depends(get_order_repo)):
+async def create_order(order: schemas.OrderCreate, repo: OrderRepository = Depends(get_order_repo)):
     try:
 
         db_order = await repo.create(order)
@@ -47,7 +47,6 @@ async def create_order(order: schemas.OrderCreate, db: AsyncSession = Depends(da
 
         return order_response
     except Exception as e:
-        await db.rollback()
         print(f'Error creating order: {e}')
         raise HTTPException(
             status_code=httpStatus.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -55,17 +54,18 @@ async def create_order(order: schemas.OrderCreate, db: AsyncSession = Depends(da
         )
 
 @router.get('/{order_id}', response_model=schemas.Order)
-async def get_order(order_id: int, db: AsyncSession = Depends(database.get_db)):
-    result = await db.execute(select(models.Order).where(models.Order.id == order_id))
-    order = result.scalars().first()
+async def get_order(order_id: int, repo: OrderRepository = Depends(get_order_repo)):
+    
+    order = await repo.get_order_by_id(order_id)
 
+    print(order)
+    
     if not order:
         raise HTTPException(
             status_code=httpStatus.HTTP_404_NOT_FOUND,
             detail='Order not found'
         )
     
-    await db.refresh()
     return order
 
 

@@ -39,7 +39,7 @@ class OrderRepository:
             raise e
     
     async def get_order_by_id(self, order_id: int) -> models.Order | None:
-        stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id == order_id)
+        stmt = select(models.Order).options(selectinload(models.Order.items)).where(models.Order.id == order_id)
         result = await self.db.execute(stmt)
         return result.scalars().first()
     
