@@ -2,7 +2,8 @@ import datetime
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, distinct
-from .. import schemas, models
+from fastapi import Depends
+from .. import schemas, models, database
 
 class OrderRepository:
     def __init__(self, db: AsyncSession):
@@ -91,7 +92,9 @@ class OrderRepository:
             "page": page,
             "page_size": page_size 
         }
-        
+    
+def get_order_repo(db: AsyncSession = Depends(database.get_db)) -> OrderRepository:
+    return OrderRepository(db)  
 
           
 

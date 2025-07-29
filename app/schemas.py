@@ -52,3 +52,16 @@ class OrdersPaginated(BaseModel):
     page_size: int
     total_pages: int
     data: List[Order]
+
+class OrderItemEvent(OrderItemBase):
+    pass
+
+class OrderCreatedEvent(BaseModel):
+    orderId: str
+    userId: str
+    total_amout: float
+    status: str
+    items: List[OrderItemEvent]
+    createdAt: datetime
+
+    model_config=ConfigDict(from_attributes=True, populate_by_name=True)

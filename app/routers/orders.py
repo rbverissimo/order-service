@@ -1,17 +1,13 @@
 from fastapi import APIRouter, status as httpStatus, Depends, HTTPException, Query
 from pydantic import ValidationError
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from typing import Optional, List
 from decimal import Decimal
-from ..repositories.order_repository import OrderRepository
+from ..repositories.order_repository import OrderRepository, get_order_repo
 from ..utilities import type_conversion
-from .. import schemas, models, database, kafka_producer
+from .. import schemas, kafka_producer
 
 router = APIRouter(prefix='/orders', tags=['Orders'])
 
-def get_order_repo(db: AsyncSession = Depends(database.get_db)) -> OrderRepository:
-    return OrderRepository(db)
 
 @router.post('', response_model=schemas.Order, status_code=httpStatus.HTTP_201_CREATED)
 async def create_order(order: schemas.OrderCreate, repo: OrderRepository = Depends(get_order_repo)):

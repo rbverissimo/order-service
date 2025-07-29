@@ -5,3 +5,8 @@ asyncpg
 aiokafka
 pydantic-settings
 pydantic==2.11.7
+
+pytest==8.4.0
+pytest-asyncio==1.1.0
+pytest-mock==3.14.1
+Faker
