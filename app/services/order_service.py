@@ -9,12 +9,12 @@ class OrderService:
         self.kafka_producer = kafka_producer
     
     async def create_order_and_send_event(self, order_data: OrderCreate):
-        db_order = self.order_repo.create(order_data)
+        db_order = await self.order_repo.create(order_data)
 
         if not db_order:
             raise ValueError('Failed to process order in the database')
         
-        order_created_event = self.create_order_and_send_event(db_order)
+        order_created_event = self.__create_order_created_event(db_order)
 
         await self.kafka_producer.publish_to_order_created_topic(order_created_event)
 
@@ -22,7 +22,7 @@ class OrderService:
 
 
 
-    def create_order_created_event(self, db_order: Order) -> OrderCreatedEvent:
+    def __create_order_created_event(self, db_order: Order) -> OrderCreatedEvent:
         items_for_event = []
         for item in db_order.items:
             items_for_event.append(OrderItemEvent(
@@ -32,7 +32,7 @@ class OrderService:
             ))
 
         return OrderCreatedEvent(
-            orderId=db_order.id,
+            orderId=str(db_order.id),
             userId=db_order.user_id,
             total_amout=db_order.total_amount,
             status=db_order.status,
