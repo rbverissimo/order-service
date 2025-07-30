@@ -1,11 +1,12 @@
 from fastapi import Depends
 from ..repositories.order_repository import OrderRepository, get_order_repo
 from ..schemas import OrderCreate, Order, OrderCreatedEvent, OrderItemEvent
-from .. import kafka_producer
+from app.publishers.kafka_producer import KafkaProducerService, get_kafka_producer_service
 
 class OrderService:
-    def __init__(self, order_repo: OrderRepository):
+    def __init__(self, order_repo: OrderRepository, kafka_producer: KafkaProducerService):
         self.order_repo = order_repo
+        self.kafka_producer = kafka_producer
     
     async def create_order_and_send_event(self, order_data: OrderCreate):
         db_order = self.order_repo.create(order_data)
@@ -15,7 +16,7 @@ class OrderService:
         
         order_created_event = self.create_order_and_send_event(db_order)
 
-        await kafka_producer.send_order_created_message(order_created_event)
+        await self.kafka_producer.publish_to_order_created_topic(order_created_event)
 
         return Order.model_validate(db_order)
 
@@ -40,6 +41,7 @@ class OrderService:
         )
     
 async def get_order_service(
-        order_repo: OrderRepository = Depends(get_order_repo)
+        order_repo: OrderRepository = Depends(get_order_repo),
+        kafka_producer: KafkaProducerService = Depends(get_kafka_producer_service)
     ):
-        return OrderService(order_repo)
+        return OrderService(order_repo, kafka_producer)
