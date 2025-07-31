@@ -27,7 +27,7 @@ class KafkaProducerService:
             print(f'Message sent to topic {topic}: {message_payload}')
         except Exception as e:
             print(f'Failed to sent message to topic {topic}: {message_payload}')
-            raise
+            raise e
 
 kafka_producer_service: KafkaProducerService = None
 

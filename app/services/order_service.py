@@ -9,16 +9,22 @@ class OrderService:
         self.kafka_producer = kafka_producer
     
     async def create_order_and_send_event(self, order_data: OrderCreate):
-        db_order = await self.order_repo.create(order_data)
 
-        if not db_order:
-            raise ValueError('Failed to process order in the database')
-        
-        order_created_event = self.__create_order_created_event(db_order)
+        try:
+            db_order = await self.order_repo.create(order_data)
 
-        await self.kafka_producer.publish_to_order_created_topic(order_created_event)
+            if not db_order:
+                raise ValueError('Failed to process order in the database')
+            
+            
+            order_created_event = self.__create_order_created_event(db_order)
 
-        return Order.model_validate(db_order)
+            await self.kafka_producer.publish_to_order_created_topic(order_created_event)
+
+            return Order.model_validate(db_order)
+        except Exception as e:
+            print(f'OrderService: could not process order and publish to topic', e)
+            raise e
 
 
 

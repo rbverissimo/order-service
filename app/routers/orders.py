@@ -3,17 +3,18 @@ from pydantic import ValidationError
 from typing import Optional, List
 from decimal import Decimal
 from ..repositories.order_repository import OrderRepository, get_order_repo
+from app.services.order_service import OrderService, get_order_service
 from ..utilities import type_conversion
-from .. import schemas, kafka_producer
+from .. import schemas
 
 router = APIRouter(prefix='/orders', tags=['Orders'])
 
 
 @router.post('', response_model=schemas.Order, status_code=httpStatus.HTTP_201_CREATED)
-async def create_order(order: schemas.OrderCreate, repo: OrderRepository = Depends(get_order_repo)):
+async def create_order(order: schemas.OrderCreate, service: OrderService = Depends(get_order_service)):
     try:
 
-        db_order = await repo.create(order)
+        db_order = await service.create_order_and_send_event(order)
 
         if not db_order:
             raise HTTPException(
@@ -23,27 +24,9 @@ async def create_order(order: schemas.OrderCreate, repo: OrderRepository = Depen
 
         order_response = schemas.Order.model_validate(db_order)
 
-        event_payload = {
-            "orderId": str(db_order.id),
-            "userId": db_order.user_id,
-            "total_amount": float(db_order.total_amount),
-            "status": db_order.status,
-            "items": [
-                {
-                    "productId": item.product_id,
-                    "quantity": item.quantity,
-                    "price": float(item.price)
-
-                } for item in db_order.items
-            ], 
-            "createdAt": db_order.created_at.isoformat()
-        }
-
-        await kafka_producer.send_order_created_message(event_payload)
-
         return order_response
     except Exception as e:
-        print(f'Error creating order: {e}')
+        print(f'OrderRouter: Error creating order: {e}')
         raise HTTPException(
             status_code=httpStatus.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f'Failed to create order: {e}'
