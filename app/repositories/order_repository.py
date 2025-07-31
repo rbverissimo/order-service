@@ -31,13 +31,10 @@ class OrderRepository:
                 self.db.add(db_item)
 
             await self.db.commit()
-
-            print('OrderRepository.create: JUST BEFORE SELECTING')
-
+            
             stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id==db_order.id) 
 
             result = await self.db.execute(stmt)
-            print('OrderRepository.create: Select statement executed. Materializing results...')
             return result.scalars().first()
         except Exception as e:
             await self.db.rollback()
