@@ -2,6 +2,7 @@ import datetime
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, distinct
+from sqlalchemy.future import select as async_select
 from fastapi import Depends
 from .. import schemas, models, database
 
@@ -20,6 +21,7 @@ class OrderRepository:
 
             self.db.add(db_order)
             await self.db.flush()
+            print(f'DEBUG: Order ID after flush: {db_order.id}')
 
             for item_data in order_create.items:
                 db_item = models.OrderItem(
@@ -31,11 +33,8 @@ class OrderRepository:
                 self.db.add(db_item)
 
             await self.db.commit()
-            
-            stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id==db_order.id) 
 
-            result = await self.db.execute(stmt)
-            return result.scalars().first()
+            return db_order
         except Exception as e:
             await self.db.rollback()
             raise e
