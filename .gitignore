@@ -1,4 +1,5 @@
 .venv
+venv
 app/__pycache__/
 __pycache__
 app/repositories/__pycache__/
