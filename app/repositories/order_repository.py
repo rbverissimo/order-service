@@ -21,7 +21,6 @@ class OrderRepository:
 
             self.db.add(db_order)
             await self.db.flush()
-            print(f'DEBUG: Order ID after flush: {db_order.id}')
 
             for item_data in order_create.items:
                 db_item = models.OrderItem(
@@ -32,18 +31,28 @@ class OrderRepository:
                 )
                 self.db.add(db_item)
 
+            await self.db.flush()
+
+            stmt = select(models.Order).options(joinedload(models.Order.items)).where(models.Order.id==db_order.id)
+            result = await self.db.execute(stmt)
+            db_order_refreshed = result.scalars().first()
+
             await self.db.commit()
 
-            return db_order
+            return db_order_refreshed
         except Exception as e:
-            await self.db.rollback()
+            print(f'OrderRepository: Could not save order to database: {e}')
             raise e
     
     async def get_order_by_id(self, order_id: int) -> models.Order | None:
-        stmt = select(models.Order).options(selectinload(models.Order.items)).where(models.Order.id == order_id)
-        result = await self.db.execute(stmt)
-        return result.scalars().first()
-    
+        try:
+            stmt = select(models.Order).options(selectinload(models.Order.items)).where(models.Order.id == order_id)
+            result = await self.db.execute(stmt)
+            return result.scalars().first()
+        except Exception as e:
+            print(f'OrderRepository: Could not fetch orders from database: {e}')
+            raise e
+        
     async def get_paginated_orders(
             self,
             page: int,
