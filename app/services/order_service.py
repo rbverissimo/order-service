@@ -3,7 +3,7 @@ from ..repositories.order_repository import OrderRepository, get_order_repo
 from ..schemas import OrderCreate, Order, OrderCreatedEvent, OrderItemEvent
 from app.publishers.kafka_producer import KafkaProducerService, get_kafka_producer_service
 
-from app.database import AsyncSessionLocal
+
 
 class OrderService:
     def __init__(self, order_repo: OrderRepository, kafka_producer: KafkaProducerService):
@@ -15,20 +15,13 @@ class OrderService:
         try:
             db_order = await self.order_repo.create(order_data)
 
-            async with AsyncSessionLocal() as read_session:
-                read_order_repo = get_order_repo(read_session)
-                db_order_with_items = await read_order_repo.get_order_by_id(db_order.id)
-
-
-            if not db_order_with_items:
-                raise ValueError('Failed to process order in the database')
+            if not db_order:
+                raise ValueError('OrderService: Failed to fetch data')
             
-            print(db_order_with_items.items)
-            
-            order_created_event = self.__create_order_created_event(db_order_with_items)
+            order_created_event = self.__create_order_created_event(db_order)
 
             await self.kafka_producer.publish_to_order_created_topic(order_created_event)
-
+            
             return Order.model_validate(db_order)
         except Exception as e:
             print(f'OrderService: could not process order and publish to topic', e)
