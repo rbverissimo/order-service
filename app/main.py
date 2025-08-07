@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, status as httpStatus
-from . import database, kafka_producer
+from . import database
 from app.routers import orders
 
 
@@ -16,7 +16,6 @@ app.include_router(orders.router)
 async def startup_event():
     print('Order Service starting!')
     await database.init_db()
-    await kafka_producer.kafka_producer_startup()
     print('Startup completed!')
 
 @app.on_event('shutdown')
