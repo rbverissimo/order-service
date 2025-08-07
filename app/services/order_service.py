@@ -2,13 +2,15 @@ from fastapi import Depends
 from ..repositories.order_repository import OrderRepository, get_order_repo
 from ..schemas import OrderCreate, Order, OrderCreatedEvent, OrderItemEvent
 from app.publishers.kafka_producer import KafkaProducerService, get_kafka_producer_service
-
+import logging
 
 
 class OrderService:
+
     def __init__(self, order_repo: OrderRepository, kafka_producer: KafkaProducerService):
         self.order_repo = order_repo
         self.kafka_producer = kafka_producer
+        self.logger = logging.getLogger('__name__')
     
     async def create_order_and_send_event(self, order_data: OrderCreate):
 
@@ -24,7 +26,7 @@ class OrderService:
             
             return Order.model_validate(db_order)
         except Exception as e:
-            print(f'OrderService: could not process order and publish to topic', e)
+            self.logger.error(f'OrderService: could not process order and publish to topic', e)
             raise e
 
 

@@ -2,12 +2,14 @@ from fastapi import APIRouter, status as httpStatus, Depends, HTTPException, Que
 from pydantic import ValidationError
 from typing import Optional, List
 from decimal import Decimal
+import logging
 from ..repositories.order_repository import OrderRepository, get_order_repo
 from app.services.order_service import OrderService, get_order_service
 from ..utilities import type_conversion
 from .. import schemas
 
 router = APIRouter(prefix='/orders', tags=['Orders'])
+logger = logging.getLogger('__name__')
 
 
 @router.post('', response_model=schemas.Order, status_code=httpStatus.HTTP_201_CREATED)
@@ -26,7 +28,7 @@ async def create_order(order: schemas.OrderCreate, service: OrderService = Depen
 
         return order_response
     except Exception as e:
-        print(f'OrderRouter: Error creating order: {e}')
+        logger.error(f'OrderRouter: Error creating order: {e}')
         raise HTTPException(
             status_code=httpStatus.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f'Failed to create order: {e}'

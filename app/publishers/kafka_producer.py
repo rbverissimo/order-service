@@ -2,6 +2,7 @@ from aiokafka import AIOKafkaProducer
 from app.core.config import Settings
 from app.schemas import OrderCreatedEvent
 from typing import AsyncGenerator
+import logging
 
 
 class KafkaProducerService:
@@ -10,23 +11,25 @@ class KafkaProducerService:
 
     def __init__(self, bootstrap_servers: str):
         self.producer = AIOKafkaProducer(bootstrap_servers=bootstrap_servers)
+        self.logger = logging.getLogger('__name__')
 
     async def start(self):
         await self.producer.start()
-        print('Kafka producer started!')
+        self.logger.info('Kafka producer started!')
     
     async def stop(self):
         await self.producer.stop()
-        print('Kafka producer stopped!')
+        self.logger.info('Kafka producer stopped!')
     
     async def publish_to_order_created_topic(self, event: OrderCreatedEvent):
         try:
             topic = self.TOPIC_ORDER_CREATED
             message_payload = event.model_dump_json().encode('utf-8')
             key=str(event.orderId).encode('utf-8')
-            await self.producer.send_and_wait(topic, message_payload, key) 
+            await self.producer.send_and_wait(topic, message_payload, key)
+            self.logger.debug(f'A message was published in topic {topic}: {message_payload} with key {key}') 
         except Exception as e:
-            print(f'Failed to sent message to topic {topic}: {message_payload}')
+            self.logger.error(f'Failed to sent message to topic {topic}: {message_payload}')
             raise e
 
 async def get_kafka_producer_service() -> AsyncGenerator[KafkaProducerService, None]:
