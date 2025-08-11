@@ -3,7 +3,6 @@ from pydantic import ValidationError
 from typing import Optional, List
 from decimal import Decimal
 import logging
-from ..repositories.order_repository import OrderRepository, get_order_repo
 from app.services.order_service import OrderService, get_order_service
 from ..utilities import type_conversion
 from .. import schemas
@@ -55,7 +54,7 @@ async def get_order(order_id: int, service: OrderService = Depends(get_order_ser
 async def index_orders(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
-    repo: OrderRepository = Depends(get_order_repo),
+    service: OrderService = Depends(get_order_service),
     product_id: Optional[List[str]] = Query(None, description='Filter by product_id eg product_id=xyz&product_id=abc'),
     min_amount: Optional[Decimal] = Query(None),
     max_amount: Optional[Decimal] = Query(None),
@@ -74,5 +73,5 @@ async def index_orders(
             status_code= httpStatus.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=processed_errors
         )
-    paginated_result = await repo.get_paginated_orders(page=page, page_size=page_size, filters=filters)
+    paginated_result = await service.get_paginated_orders(page, page_size, filters)
     return paginated_result
