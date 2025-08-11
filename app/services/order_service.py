@@ -28,8 +28,15 @@ class OrderService:
         except Exception as e:
             self.logger.error(f'OrderService: could not process order and publish to topic', e)
             raise e
-
-
+    
+    async def get_order_by_id(self, order_id: int) -> Order | None:
+        try:
+            order = await self.order_repo.get_order_by_id(order_id)
+            return order
+        except Exception as e:
+            self.logger.error(f'OrderSerivce: Could not fetch order {order_id} from repo')
+            raise e
+        
 
     def __create_order_created_event(self, db_order: Order) -> OrderCreatedEvent:
         items_for_event = []

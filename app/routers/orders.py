@@ -35,19 +35,20 @@ async def create_order(order: schemas.OrderCreate, service: OrderService = Depen
         )
 
 @router.get('/{order_id}', response_model=schemas.Order)
-async def get_order(order_id: int, repo: OrderRepository = Depends(get_order_repo)):
-    
-    order = await repo.get_order_by_id(order_id)
+async def get_order(order_id: int, service: OrderService = Depends(get_order_service)):
 
-    print(order)
-    
-    if not order:
-        raise HTTPException(
-            status_code=httpStatus.HTTP_404_NOT_FOUND,
-            detail='Order not found'
-        )
-    
-    return order
+    try:
+        order = await service.get_order_by_id(order_id)
+        if not order:
+            raise HTTPException(
+                status_code=httpStatus.HTTP_404_NOT_FOUND,
+                detail=f'Order {order_id} not found'
+            )
+        
+        return order
+    except Exception as e:
+        logger.error(f'OrderRouter: Could not fetch order {order_id}')
+        raise e
 
 
 @router.get('', response_model=schemas.OrdersPaginated)
