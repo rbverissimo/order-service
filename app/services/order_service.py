@@ -58,7 +58,7 @@ class OrderService:
         return OrderCreatedEvent(
             orderId=str(db_order.id),
             userId=db_order.user_id,
-            total_amout=db_order.total_amount,
+            total_amount=float(db_order.total_amount),
             status=db_order.status,
             items=items_for_event,
             createdAt=db_order.created_at

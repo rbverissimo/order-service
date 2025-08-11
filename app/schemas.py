@@ -59,7 +59,7 @@ class OrderItemEvent(OrderItemBase):
 class OrderCreatedEvent(BaseModel):
     orderId: str
     userId: str
-    total_amout: float
+    total_amount: float
     status: str
     items: List[OrderItemEvent]
     createdAt: datetime
