@@ -2,10 +2,10 @@ import uvicorn
 from fastapi import FastAPI, status as httpStatus
 from . import database
 from app.routers import orders
-from core.config import LoggerConfig
+from app.core.config import LoggerConfig
 
 
-logger_cofing = LoggerConfig()
+logger_config = LoggerConfig()
 
 app = FastAPI(
     title='Order Service',
@@ -31,5 +31,5 @@ async def health_check():
     return {'status': 'Order Service is healthy'}
 
 if __name__ == '__main__':
-    logger_cofing.setup_logging()
+    logger_config.setup_logging()
     uvicorn.run('app.main:app', host='0.0.0.0', port=8008, reload=True)
