@@ -27,7 +27,7 @@ class KafkaProducerService:
             message_payload = event.model_dump_json().encode('utf-8')
             key=str(event.orderId).encode('utf-8')
             await self.producer.send_and_wait(topic, message_payload, key)
-            self.logger.debug(f'A message was published in topic {topic}: {message_payload} with key {key}') 
+            self.logger.info(f'A message was published in topic {topic}: {message_payload} with key {key}') 
         except Exception as e:
             self.logger.error(f'Failed to sent message to topic {topic}: {message_payload}')
             raise e
