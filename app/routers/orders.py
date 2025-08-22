@@ -74,4 +74,4 @@ async def index_orders(
             detail=processed_errors
         )
     paginated_result = await service.get_paginated_orders(page, page_size, filters)
-    return paginated_result
+    return schemas.OrdersPaginated.model_validate(paginated_result)

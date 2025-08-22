@@ -39,7 +39,7 @@ class OrderService:
         
     async def get_paginated_orders(self, page: int, page_size: int, filters):
         try:
-            orders = self.order_repo.get_paginated_orders(page, page_size, filters)
+            orders = await self.order_repo.get_paginated_orders(page, page_size, filters)
             return orders
         except Exception as e:
             self.logger.error(f'OrderService: Could not fetch paginated orders ');
